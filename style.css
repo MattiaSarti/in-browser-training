@@ -1,0 +1,93 @@
+body {
+    /* background-color:white !important; */
+    background-image: linear-gradient(to right, rgb(0, 162, 255), white, white, white, rgb(0, 162, 255));
+
+    color: rgb(0, 162, 255) !important;
+    font-size: 1.3em;
+    text-align: center;
+}
+
+h1 {
+    margin-top: auto;
+}
+
+h2 {
+    margin-top: auto;
+}
+
+#ingredients-grid {
+    display: grid;
+    gap: 60px;
+
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(3, 1fr);
+
+    justify-content: space-between;
+
+    margin-bottom: auto;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+
+    width: 50vw;
+    height: 50vh;
+}
+
+.first {
+    grid-column: 1;
+    grid-row: 1;
+}
+
+.second {
+    grid-column: 2;
+    grid-row: 1;
+}
+
+.third {
+    grid-column: 3;
+    grid-row: 1;
+}
+
+.fourth {
+    grid-column: 1;
+    grid-row: 2;
+}
+
+.fifth {
+    grid-column: 2;
+    grid-row: 2;
+}
+
+.sixth {
+    grid-column: 3;
+    grid-row: 2;
+}
+
+.seventh {
+    grid-column: 1;
+    grid-row: 3;
+}
+
+.eighth {
+    grid-column: 2;
+    grid-row: 3;
+}
+
+.ninth {
+    grid-column: 3;
+    grid-row: 3;
+}
+
+.first, .second, .third, .fourth, .fifth, .sixth, .seventh, .eighth, .ninth {
+    align-self: center;
+}
+
+.ingredient-image {
+    margin-bottom: auto;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: auto;
+
+    max-height: 100%;
+    max-width: 100%;
+}

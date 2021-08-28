@@ -33,52 +33,60 @@ h2 {
     height: 50vh;
 }
 
-.first {
+#first-ingredient {
     grid-column: 1;
     grid-row: 1;
 }
 
-.second {
+#second-ingredient {
     grid-column: 2;
     grid-row: 1;
 }
 
-.third {
+#third-ingredient {
     grid-column: 3;
     grid-row: 1;
 }
 
-.fourth {
+#fourth-ingredient {
     grid-column: 1;
     grid-row: 2;
 }
 
-.fifth {
+#fifth-ingredient {
     grid-column: 2;
     grid-row: 2;
 }
 
-.sixth {
+#sixth-ingredient {
     grid-column: 3;
     grid-row: 2;
 }
 
-.seventh {
+#seventh-ingredient {
     grid-column: 1;
     grid-row: 3;
 }
 
-.eighth {
+#eighth-ingredient {
     grid-column: 2;
     grid-row: 3;
 }
 
-.ninth {
+#ninth-ingredient {
     grid-column: 3;
     grid-row: 3;
 }
 
-.first, .second, .third, .fourth, .fifth, .sixth, .seventh, .eighth, .ninth {
+#first-ingredient,
+#second-ingredient,
+#third-ingredient,
+#fourth-ingredient,
+#fifth-ingredient,
+#sixth-ingredient,
+#seventh-ingredient,
+#eighth-ingredient,
+#ninth-ingredient {
     align-self: center;
 }
 

@@ -13,7 +13,19 @@ h1 {
 }
 
 h2 {
+    color: white;
+
+    font-size: 3.6em;
+
+    height: 90%;
+
+    margin-bottom: auto;
     margin-top: auto;
+
+    position: absolute;
+
+    text-orientation: sideways;
+    writing-mode: sideways-lr;
 }
 
 #ingredients-grid {

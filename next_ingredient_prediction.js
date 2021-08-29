@@ -11,11 +11,15 @@ let ingredientClasses2IDsMapping;
 let ingredientDivIDs;
 let ingredientIDs2ClassesMapping
 let ingredientIDs2DivsMapping;
+let labels;
 let model;
+let samples;
+let samplesCount;
+let status;
 
 
 function buildModelArchitecture() {
-    // defining the dense layers' hyperparameters:
+    // defining the architectural hyperparameters:
     let dense_layers_hyperparameters = [
         {
             inputShape: [1],
@@ -40,11 +44,19 @@ function buildModelArchitecture() {
     return model;
 }
 
+function dryRun() {
+    /*
+    Let the model make a useless prediction, so as to be internally ready,
+    serving following inferences with no first-time internal prediction setup
+    delays.
+    */
+    model.predict(tf.tensor([[4],]));
+}
 
-function highlightIngredient(layoutElementID, colorName, toBeDelayed = false) {
 
+function highlightIngredient(layoutElementID, colorName,
+                             toBeDelayed = false) {
     function setShadowStyle(toBeReset = false) {
-
         let shadowStyle;
         if (toBeReset) {
             shadowStyle = "none";
@@ -60,7 +72,8 @@ function highlightIngredient(layoutElementID, colorName, toBeDelayed = false) {
         }
 
         // setting the chosen shadow style:
-        ingredientIDs2DivsMapping[layoutElementID].style["boxShadow"] = shadowStyle;
+        ingredientIDs2DivsMapping[layoutElementID]
+            .style["boxShadow"] = shadowStyle;
     }
 
     if (toBeDelayed) {
@@ -84,11 +97,15 @@ function highlightIngredient(layoutElementID, colorName, toBeDelayed = false) {
 
 
 function predictNextIngredientClass(lastIngredientClass) {
-    return lastIngredientClass !== 8 ? lastIngredientClass + 1 : 0;
+    // return lastIngredientClass !== 8 ? lastIngredientClass + 1 : 0;
+    return model.predict(tf.tensor([[lastIngredientClass],])).argMax(1)
+        .dataSync()[0];
 }
 
 
 function setup() {
+    status = document.getElementById("status");
+
     ingredientDivIDs = [
         "first-ingredient",
         "second-ingredient",
@@ -119,18 +136,82 @@ function setup() {
             ingredientIDs2DivsMapping[id].addEventListener(
                 'click',
                 function () {
-                    temp(id);
+                    highlightCurrentAndPredictedNext(id);
                 },
                 false
             )
         }
     );
 
+    // -----------------------------------------------------------------------
+
+    // instantiating the model architecture:
     model = buildModelArchitecture();
+
+    // letting the model make a useless prediction, so as to be internally
+    // ready, serving following inferences with no first-time internal
+    // prediction setup delays:
+    dryRun();
+
+    status.innerHTML = "Inference";
+
+    status.innerHTML = "Collecting Samples";
+
+    samplesCount = 0;
+
+    samples = tf.tensor(
+        [
+            [0],
+            [5],
+            [5],
+            [7],
+            [7],
+            [0],
+        ]
+    );
+    labels = tf.oneHot(
+        tf.tensor(
+            [
+                5,
+                7,
+                0,
+                5,
+                0,
+                7
+            ],
+            undefined,
+            'int32'
+        ),
+        9
+    );
+
+    model.compile({
+        optimizer: 'sgd',
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy']
+    });
+
+    // function onBatchEnd(batch, logs) {
+    //     console.log('Accuracy', logs.acc);
+    // }
+    
+    model.fit(
+        samples,
+        labels,
+        {
+            epochs: 10,
+            batchSize: 1,
+            // callbacks: {onBatchEnd}
+        }
+    ).then(
+        info => {
+            console.log('Final accuracy', info.history.acc);
+        }
+    );
 }
 
 
-function temp(id) {
+function highlightCurrentAndPredictedNext(id) {
     // highlighting the currently selected ingredient immediately:
     highlightIngredient(id, 'light blue');
 

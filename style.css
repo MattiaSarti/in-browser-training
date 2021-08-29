@@ -42,8 +42,8 @@ h2 {
     margin-right: auto;
     margin-top: auto;
 
+    height: 6vh;
     width: 50vw;
-    height: 50vh;
 }
 
 #first-ingredient {
@@ -111,4 +111,44 @@ h2 {
 
     max-height: 100%;
     max-width: 100%;
+}
+
+.space {
+    float: right;
+
+    height: 10vh;
+    width: 70vw;
+}
+
+.collected-data {
+    float: right;
+
+    height: 10vh;
+    width: 18vw;
+}
+
+.sample {
+    float: left;
+
+    vertical-align: middle;
+
+    height: auto;
+    width: 36%;
+}
+
+.arrow {
+    color: white;
+
+    float: center;
+
+    vertical-align: middle;
+}
+
+.label {
+    float: right;
+
+    vertical-align: middle;
+
+    height: auto;
+    width: 36%;
 }

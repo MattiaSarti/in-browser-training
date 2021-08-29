@@ -5,7 +5,11 @@ Model for next ingredient prediction training and deployment for inference.
 
 const greenBorderShadowStyle = "0 0 60px rgb(0, 255, 0)";
 const highlighTime = 600;  // [ms]
+const learningRate = 0.1;
 const lightBlueBorderShadowStyle = "0 0 60px rgb(0, 162, 255)";
+const miniBatchSize = 1;
+const nEpochs = 15;
+const numClasses = 9;
 
 let ingredientClasses2IDsMapping;
 let ingredientDivIDs;
@@ -21,14 +25,16 @@ let status;
 function buildModelArchitecture() {
     // defining the architectural hyperparameters:
     let dense_layers_hyperparameters = [
+        // {
+        //     inputShape: [9],
+        //     units: 32,
+        //     activation:'relu'
+        // },
         {
-            inputShape: [1],
-            units: 3,
-            activation:'relu'
-        },
-        {
+            inputShape: [9],
             units: 9,
-            activation:'softmax'
+            activation:'softmax',
+            dtype: 'float32'
         }
     ];
 
@@ -50,7 +56,23 @@ function dryRun() {
     serving following inferences with no first-time internal prediction setup
     delays.
     */
-    model.predict(tf.tensor([[4],]));
+    model.predict(turnClassesIntoOneHotTensors([4]));
+}
+
+
+function highlightCurrentAndPredictedNext(id) {
+    // highlighting the currently selected ingredient immediately:
+    highlightIngredient(id, 'light blue');
+
+    // getting the id of the ingredient predicted to be selected next from the
+    // id of the currently selected ingredient:
+    let lastIngredientClass = ingredientIDs2ClassesMapping[id];
+    let NextIngredientClass = predictNextIngredientClass(lastIngredientClass);
+    let NextIngredientID = ingredientClasses2IDsMapping[NextIngredientClass];
+
+    // highlighting the ingredient predicted to be selected next after the set
+    // temporal delay:
+    highlightIngredient(NextIngredientID, 'green', true);
 }
 
 
@@ -98,8 +120,9 @@ function highlightIngredient(layoutElementID, colorName,
 
 function predictNextIngredientClass(lastIngredientClass) {
     // return lastIngredientClass !== 8 ? lastIngredientClass + 1 : 0;
-    return model.predict(tf.tensor([[lastIngredientClass],])).argMax(1)
-        .dataSync()[0];
+    return model.predict(
+        turnClassesIntoOneHotTensors([lastIngredientClass])
+    ).argMax(1).dataSync()[0];
 }
 
 
@@ -153,77 +176,88 @@ function setup() {
     // prediction setup delays:
     dryRun();
 
-    status.innerHTML = "Inference";
-
     status.innerHTML = "Collecting Samples";
 
     samplesCount = 0;
 
-    samples = tf.tensor(
-        [
-            [0],
-            [5],
-            [5],
-            [7],
-            [7],
-            [0],
-        ]
-    );
-    labels = tf.oneHot(
-        tf.tensor(
-            [
-                5,
-                7,
-                0,
-                5,
-                0,
-                7
-            ],
-            undefined,
-            'int32'
-        ),
-        9
-    );
+    samples = [
+        0,
+        5,
+        8,
+        4,
+        1,
+        6,
+        2,
+        4,
+        3,
+        7,
+    ];
+    labels = [
+        5,
+        0,
+        4,
+        8,
+        6,
+        1,
+        4,
+        2,
+        7,
+        3,
+    ];
+
+    samples = turnClassesIntoOneHotTensors(samples);
+    labels = turnClassesIntoOneHotTensors(labels);
+
+    status.innerHTML = "...Training...";
 
     model.compile({
-        optimizer: 'sgd',
         loss: 'categoricalCrossentropy',
-        metrics: ['accuracy']
+        metrics: ['accuracy'],
+        optimizer: tf.train.sgd(learningRate)
     });
 
-    // function onBatchEnd(batch, logs) {
-    //     console.log('Accuracy', logs.acc);
-    // }
+    function onEpochEnd(epoch, logs) {
+        console.log(
+            'Epoch ' + epoch + ":",
+            "loss",
+            logs.loss,
+            "-",
+            "accuracy",
+            logs.acc
+        );
+    }
     
     model.fit(
         samples,
         labels,
         {
-            epochs: 10,
-            batchSize: 1,
-            // callbacks: {onBatchEnd}
+            batchSize: miniBatchSize,
+            epochs: nEpochs,
+            callbacks: {onEpochEnd},
         }
     ).then(
         info => {
-            console.log('Final accuracy', info.history.acc);
+            let epochs_accuracies = info.history.acc;
+            console.log(
+                'Post-Training Accuracy:',
+                epochs_accuracies[epochs_accuracies.length -1]
+            );
+            status.innerHTML = "Inference";
         }
     );
 }
 
 
-function highlightCurrentAndPredictedNext(id) {
-    // highlighting the currently selected ingredient immediately:
-    highlightIngredient(id, 'light blue');
-
-    // getting the id of the ingredient predicted to be selected next from the
-    // id of the currently selected ingredient:
-    let lastIngredientClass = ingredientIDs2ClassesMapping[id];
-    let NextIngredientClass = predictNextIngredientClass(lastIngredientClass);
-    let NextIngredientID = ingredientClasses2IDsMapping[NextIngredientClass];
-
-    // highlighting the ingredient predicted to be selected next after the set
-    // temporal delay:
-    highlightIngredient(NextIngredientID, 'green', true);
+function turnClassesIntoOneHotTensors(classes) {
+    return tf.oneHot(
+        tf.tensor(
+            classes,
+            undefined,
+            'int32'
+        ),
+        numClasses
+    )
 }
+
 
 setup();

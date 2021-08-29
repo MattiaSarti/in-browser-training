@@ -5,6 +5,17 @@ Model for next ingredient prediction training and deployment for inference.
 
 const greenBorderShadowStyle = "0 0 60px rgb(0, 255, 0)";
 const highlighTime = 600;  // [ms]
+const ingredientDivIDs = [
+    "first-ingredient",
+    "second-ingredient",
+    "third-ingredient",
+    "fourth-ingredient",
+    "fifth-ingredient",
+    "sixth-ingredient",
+    "seventh-ingredient",
+    "eighth-ingredient",
+    "ninth-ingredient"
+];
 const learningRate = 0.1;
 const lightBlueBorderShadowStyle = "0 0 60px rgb(0, 162, 255)";
 const miniBatchSize = 1;
@@ -12,7 +23,6 @@ const nEpochs = 15;
 const numClasses = 9;
 
 let ingredientClasses2IDsMapping;
-let ingredientDivIDs;
 let ingredientIDs2ClassesMapping
 let ingredientIDs2DivsMapping;
 let labels;
@@ -20,6 +30,17 @@ let model;
 let samples;
 let samplesCount;
 let status;
+
+
+function assembleHTMLOfCollectedSample(samplePicturePath, labelPicturePath) {
+    return `
+      <div class="collected-data">
+        <img class="sample" src="${samplePicturePath}"/>
+        <img class="label" src="${labelPicturePath}"/>
+        <p class="arrow">→</p>
+      </div>
+    `;
+}
 
 
 function buildModelArchitecture() {
@@ -50,6 +71,22 @@ function buildModelArchitecture() {
     return model;
 }
 
+
+function displayCollectedSample(samplePicturePath, labelPicturePath) {
+
+    let div = document.createElement('div');
+    div.innerHTML = assembleHTMLOfCollectedSample(
+        samplePicturePath,
+        labelPicturePath
+    );
+    document.body.appendChild(div);
+
+    div = document.createElement('div');
+    div.innerHTML = '<div class="space"></div>';
+    document.body.appendChild(div);
+}
+
+
 function dryRun() {
     /*
     Let the model make a useless prediction, so as to be internally ready,
@@ -60,7 +97,7 @@ function dryRun() {
 }
 
 
-function highlightCurrentAndPredictedNext(id) {
+function highlightCurrentAndPredictedNext(id, picturePath) {
     // highlighting the currently selected ingredient immediately:
     highlightIngredient(id, 'light blue');
 
@@ -69,6 +106,9 @@ function highlightCurrentAndPredictedNext(id) {
     let lastIngredientClass = ingredientIDs2ClassesMapping[id];
     let NextIngredientClass = predictNextIngredientClass(lastIngredientClass);
     let NextIngredientID = ingredientClasses2IDsMapping[NextIngredientClass];
+
+    // :
+    displayCollectedSample(picturePath, picturePath);
 
     // highlighting the ingredient predicted to be selected next after the set
     // temporal delay:
@@ -129,18 +169,6 @@ function predictNextIngredientClass(lastIngredientClass) {
 function setup() {
     status = document.getElementById("status");
 
-    ingredientDivIDs = [
-        "first-ingredient",
-        "second-ingredient",
-        "third-ingredient",
-        "fourth-ingredient",
-        "fifth-ingredient",
-        "sixth-ingredient",
-        "seventh-ingredient",
-        "eighth-ingredient",
-        "ninth-ingredient"
-    ];
-
     ingredientClasses2IDsMapping = {};
     ingredientIDs2ClassesMapping = {};
     ingredientIDs2DivsMapping = {}
@@ -159,7 +187,10 @@ function setup() {
             ingredientIDs2DivsMapping[id].addEventListener(
                 'click',
                 function () {
-                    highlightCurrentAndPredictedNext(id);
+                    highlightCurrentAndPredictedNext(
+                        id,
+                        ingredientIDs2DivsMapping[id]
+                            .getElementsByTagName('img')[0].src);
                 },
                 false
             )

@@ -2,7 +2,7 @@
 
 
 <p align="center">
-    A neural network is first trained, manually selecting examples, and then deployed for inference, all happening in the client's browser. It learns to predict which ingredient among the ones displayed is selected after a first one is clicked.
+    A neural network is first trained, manually selecting examples, and then deployed for inference, all happening in the client browser. It learns to predict which ingredient among the ones displayed is selected after a first one is clicked.
 </p>
 
 

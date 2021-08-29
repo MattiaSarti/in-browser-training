@@ -7,16 +7,10 @@
 
 
 ### At the beginning, pairs of ingredients visited consecutively are selected, emulating past choices:
-<p align="center">
-    ![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/sample_collection.gif)
-</p>
+![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/sample_collection.gif)
 
 ### When clicking on **Train**, a neural network is trained on the selected ingredient pairs to predicting the second ingredient after the first one is selected:
-<p align="center">
-    ![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/training.gif)
-</p>
+![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/training.gif)
 
 ### Now, after selecting an ingredient (highlighted in light blue), it highlights the ingredient predicted as selected next in green:
-<p align="center">
-    ![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/inference.gif)
-</p>
+![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/inference.gif)

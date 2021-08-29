@@ -130,14 +130,14 @@ h2 {
 .space {
     float: right;
 
-    height: 10vh;
+    height: 16vh;
     width: 70vw;
 }
 
 .collected-data {
     float: right;
 
-    height: 10vh;
+    height: 16vh;
     width: 18vw;
 }
 
@@ -165,4 +165,14 @@ h2 {
 
     height: auto;
     width: 36%;
+}
+
+#trainButton {
+    background-color: white;
+    float: right;
+    font-family: 'Brush Script MT', 'Brush Script Std', cursive;
+    font-size: 13pt;
+    height: 40px;
+    text-align: center;
+    width: 60px;
 }

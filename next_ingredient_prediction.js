@@ -3,6 +3,8 @@ Model for next ingredient prediction training and deployment for inference.
 */
 
 
+const cannotTrainMessage = "Cannot train: the last sample has not a label " +
+    "associated yet. Select a further label before proceeding.";
 const greenBorderShadowStyle = "0 0 60px rgb(0, 255, 0)";
 const highlighTime = 600;  // [ms]
 const ingredientDivIDs = [
@@ -23,13 +25,16 @@ const nEpochs = 15;
 const numClasses = 9;
 
 let ingredientClasses2IDsMapping;
+let ingredientIDs2BindedEventsMapping;
 let ingredientIDs2ClassesMapping
 let ingredientIDs2DivsMapping;
+let currentIsLabel = false;
 let labels;
 let model;
+let previousPicturePath;
 let samples;
-let samplesCount;
 let status;
+let trainButton;
 
 
 function assembleHTMLOfCollectedSample(samplePicturePath, labelPicturePath) {
@@ -72,6 +77,19 @@ function buildModelArchitecture() {
 }
 
 
+function collectSample(category) {
+    if (currentIsLabel) {
+        labels.push(category);
+    } else {
+        samples.push(category);
+    }
+
+    // considering the next clicked ingredient as a sample if the current one
+    // was a label or a label if the current one was a sample:
+    currentIsLabel = !currentIsLabel;
+}
+
+
 function displayCollectedSample(samplePicturePath, labelPicturePath) {
 
     let div = document.createElement('div');
@@ -97,7 +115,25 @@ function dryRun() {
 }
 
 
-function highlightCurrentAndPredictedNext(id, picturePath) {
+function highlightAndCollectCurrent(id, picturePath) {
+    // highlighting the currently selected ingredient immediately:
+    highlightIngredient(id, 'light blue');
+
+    // collecting the currently selected sample (or label):
+    collectSample(ingredientIDs2ClassesMapping[id]);
+
+    if (!currentIsLabel) {
+        // displaying the collected sample-label pair:
+        displayCollectedSample(previousPicturePath, picturePath);
+    } else {
+        // remembering the picture of the collected sample, to be displayed
+        // with the next one - its label:
+        previousPicturePath = picturePath;
+    }
+}
+
+
+function highlightCurrentAndPredictedNext(id) {
     // highlighting the currently selected ingredient immediately:
     highlightIngredient(id, 'light blue');
 
@@ -106,9 +142,6 @@ function highlightCurrentAndPredictedNext(id, picturePath) {
     let lastIngredientClass = ingredientIDs2ClassesMapping[id];
     let NextIngredientClass = predictNextIngredientClass(lastIngredientClass);
     let NextIngredientID = ingredientClasses2IDsMapping[NextIngredientClass];
-
-    // :
-    displayCollectedSample(picturePath, picturePath);
 
     // highlighting the ingredient predicted to be selected next after the set
     // temporal delay:
@@ -158,6 +191,33 @@ function highlightIngredient(layoutElementID, colorName,
 }
 
 
+function setUpInference() {
+    status.innerHTML = "... Ready for Inference!";
+
+    ingredientDivIDs.forEach(
+        function(id) {
+            // removing the previous event listeners (only the one including
+            // highlight, collection and display behaviors will be available):
+            ingredientIDs2DivsMapping[id].removeEventListener(
+                'click',
+                ingredientIDs2BindedEventsMapping[id],
+                false
+            );
+    
+            // setting ingredient's divs to react to clicks with temporary
+            // border shadow highlights:
+            ingredientIDs2DivsMapping[id].addEventListener(
+                'click',
+                function () {
+                    highlightCurrentAndPredictedNext(id);
+                },
+                false
+            );
+        }
+    )
+}
+
+
 function predictNextIngredientClass(lastIngredientClass) {
     // return lastIngredientClass !== 8 ? lastIngredientClass + 1 : 0;
     return model.predict(
@@ -166,12 +226,37 @@ function predictNextIngredientClass(lastIngredientClass) {
 }
 
 
-function setup() {
+function setUpModel() {
+    // instantiating the model architecture:
+    model = buildModelArchitecture();
+
+    // assigning the loss function and optimizer for training and the metrics
+    // for both training and inference:
+    model.compile({
+        loss: 'categoricalCrossentropy',
+        metrics: ['accuracy'],
+        optimizer: tf.train.sgd(learningRate)
+    });
+
+    // letting the model make a useless prediction, so as to be internally
+    // ready, serving following inferences with no first-time internal
+    // prediction setup delays:
+    dryRun();
+}
+
+
+function setUpSampleCollection() {
     status = document.getElementById("status");
+    trainButton = document.getElementById("trainButton");
+
+    status.innerHTML = "Setting Up";
 
     ingredientClasses2IDsMapping = {};
+    ingredientIDs2BindedEventsMapping = {};
     ingredientIDs2ClassesMapping = {};
     ingredientIDs2DivsMapping = {}
+    labels = [];
+    samples = [];
 
     ingredientDivIDs.forEach(
         function(id, indx) {
@@ -182,98 +267,72 @@ function setup() {
             // defining ingredient's divs:
             ingredientIDs2DivsMapping[id] = document.getElementById(id);
 
+            // getting the ingredient's picture path:
+            picturePath = ingredientIDs2DivsMapping[id]
+                .getElementsByTagName('img')[0].src
+
             // setting ingredient's divs to react to clicks with temporary
             // border shadow highlights:
+            ingredientIDs2BindedEventsMapping[id] = highlightAndCollectCurrent
+                .bind(null, id, picturePath);
             ingredientIDs2DivsMapping[id].addEventListener(
                 'click',
-                function () {
-                    highlightCurrentAndPredictedNext(
-                        id,
-                        ingredientIDs2DivsMapping[id]
-                            .getElementsByTagName('img')[0].src);
-                },
+                ingredientIDs2BindedEventsMapping[id],
                 false
             )
         }
     );
 
-    // -----------------------------------------------------------------------
+    trainButton.addEventListener(
+        'click',
+        function () {
+            if (samples.length !== labels.length) {
+                console.log(cannotTrainMessage);
+            } else {
+                trainButton.style.display="none";
+                trainModel();
+            }
+        },
+        false
+    )
 
-    // instantiating the model architecture:
-    model = buildModelArchitecture();
+    status.innerHTML = "Collecting Samples...";
+}
 
-    // letting the model make a useless prediction, so as to be internally
-    // ready, serving following inferences with no first-time internal
-    // prediction setup delays:
-    dryRun();
 
-    status.innerHTML = "Collecting Samples";
-
-    samplesCount = 0;
-
-    samples = [
-        0,
-        5,
-        8,
-        4,
-        1,
-        6,
-        2,
-        4,
-        3,
-        7,
-    ];
-    labels = [
-        5,
-        0,
-        4,
-        8,
-        6,
-        1,
-        4,
-        2,
-        7,
-        3,
-    ];
-
-    samples = turnClassesIntoOneHotTensors(samples);
-    labels = turnClassesIntoOneHotTensors(labels);
-
+function trainModel() {
     status.innerHTML = "...Training...";
 
-    model.compile({
-        loss: 'categoricalCrossentropy',
-        metrics: ['accuracy'],
-        optimizer: tf.train.sgd(learningRate)
-    });
+    const trainingConfigs = {
+        batchSize: miniBatchSize,
+        epochs: nEpochs,
+        callbacks: {onEpochEnd},
+    }
 
     function onEpochEnd(epoch, logs) {
+        console.log("Epoch " + epoch + ":", "loss", logs.loss.toFixed(2), "|",
+                    "accuracy", logs.acc.toFixed(2));
+    }
+
+    function printFinalAccuracy(info) {
+        let epochs_accuracies = info.history.acc;
         console.log(
-            'Epoch ' + epoch + ":",
-            "loss",
-            logs.loss,
-            "-",
-            "accuracy",
-            logs.acc
+            'Post-Training Accuracy:',
+            epochs_accuracies[epochs_accuracies.length -1]
         );
     }
+
+    setUpModel();
+
+    // turning samples and labels from class ids into one-hot encodings
+    // respectively to feed the model and be comparable to its outputs:
+    samples = turnClassesIntoOneHotTensors(samples);
+    labels = turnClassesIntoOneHotTensors(labels);
     
-    model.fit(
-        samples,
-        labels,
-        {
-            batchSize: miniBatchSize,
-            epochs: nEpochs,
-            callbacks: {onEpochEnd},
-        }
-    ).then(
+    model.fit(samples, labels, trainingConfigs).then(
         info => {
-            let epochs_accuracies = info.history.acc;
-            console.log(
-                'Post-Training Accuracy:',
-                epochs_accuracies[epochs_accuracies.length -1]
-            );
-            status.innerHTML = "Inference";
+            printFinalAccuracy(info);
+            setUpInference();
         }
     );
 }
@@ -291,4 +350,29 @@ function turnClassesIntoOneHotTensors(classes) {
 }
 
 
-setup();
+setUpSampleCollection();
+
+// samples = [
+//     0,
+//     5,
+//     8,
+//     4,
+//     1,
+//     6,
+//     2,
+//     4,
+//     3,
+//     7,
+// ];
+// labels = [
+//     5,
+//     0,
+//     4,
+//     8,
+//     6,
+//     1,
+//     4,
+//     2,
+//     7,
+//     3,
+// ];

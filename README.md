@@ -19,3 +19,11 @@ When clicking on **Train**, a neural network is trained on the selected ingredie
 Now, after selecting an ingredient (highlighted in light blue), it highlights the ingredient predicted as selected next in green:
 <br><br>
 ![](https://github.com/MattiaSarti/next-ingredient-prediction/raw/main/readme_videos/inference.gif)
+
+
+## How to Try It:
+
+Download the repository, enter its root folder and open **index.html** with your browser.
+
+#### Note:
+The layout renders properly on Firefox.
